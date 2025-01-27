@@ -248,7 +248,7 @@ if __name__ == "__main__":
         json.dump({"ods_data":source_list}, f)
     
     # ods_in.json -> odsuser.py -> ods_out.json
-    outfile = args['filename'].split('.')[0] + "_ods.json"
+    outfile = os.path.basename(args['filename']).split('.')[0] + "_ods.json"
     cmd = "$(which python) {} -o ods_in.json -d from_ods -w {}".format(os.path.join(ODS_PTH, "odsuser.py"), outfile)
     ret = os.system(cmd)
     if (ret != 0):
