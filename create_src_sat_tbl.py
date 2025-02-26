@@ -62,7 +62,7 @@ for s in range(len(srcDf)):
         sat_el = sat['elevations']
         sat_az = sat['azimuths']
 
-        print(f"(ut){sat_timestamps[sat_idx]}  (sel){sat_el}  (el1){azel1.alt.value} (el2){azel2.alt.value} (saz){sat_az}  (az1){azel1.az.value}  (az2){azel2.az.value}")
+        print(f"(ut){datetime.datetime.fromtimestamp(sat_timestamps[sat_idx])}  (sel){sat_el}  (el1){azel1.alt.value} (el2){azel2.alt.value} (saz){sat_az}  (az1){azel1.az.value}  (az2){azel2.az.value}")
 
         f1 = abs(azel1.az.value - sat_az) <= 10
         f2 = abs(azel2.az.value - sat_az) <= 10
