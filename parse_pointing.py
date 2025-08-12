@@ -110,9 +110,9 @@ if __name__ == "__main__":
 
                     azel2 = p2.transform_to(astropy.coordinates.AltAz(obstime=t2, location=l1))
 
-                    dif_az = azel2.az.value - azel1.az.value
+                    dif_az = azel2.az - azel1.az
                     dif_el = azel2.alt.value - azel1.alt.value
-                    az_time = abs(dif_az) / slew_az
+                    az_time = abs(dif_az.wrap_at(180 * astropy.units.deg)).value / slew_az
                     el_time = abs(dif_el) / slew_el
                     slewTime = az_time + el_time
 
@@ -214,9 +214,9 @@ if __name__ == "__main__":
 
                     azel2 = p2.transform_to(astropy.coordinates.AltAz(obstime=t2, location=l1))
 
-                    dif_az = azel2.az.value - azel1.az.value
+                    dif_az = azel2.az - azel1.az
                     dif_el = azel2.alt.value - azel1.alt.value
-                    az_time = abs(dif_az) / slew_az
+                    az_time = abs(dif_az.wrap_at(180 * astropy.units.deg)).value / slew_az
                     el_time = abs(dif_el) / slew_el
                     slewTime = az_time + el_time
 
