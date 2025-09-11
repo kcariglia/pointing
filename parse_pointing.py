@@ -14,6 +14,7 @@ and install in the python environment:
 Also assumes the following are installed in the active python environment:
 -- python 3.12
 -- astropy
+-- tabulate
 ---------------------------
 ---------------------------
 Usage:
@@ -54,13 +55,14 @@ if __name__ == "__main__":
     siteLat = 42.612949 # degrees
     siteLon = -71.493797 # degrees
     siteEl = 86.764481 # meters
-    radius = .3 # degrees
     slew_az = 200.0 / 60.0 # degrees per second, az
     slew_el = 2.0 # degrees per second, el
+    version = "v1.0.0"
+    dish_diameter = 18.3
+    subarray = 0
 
     # need to reset these when there is a new source
     src_name = None
-    src_is_pulsar = False
     cor_integ_time = 1
     src_ra = None
     src_dec = None
@@ -73,7 +75,6 @@ if __name__ == "__main__":
     trk_rate_ra = 0
     freq_lower = 2000000000
     freq_upper = 14000000000
-    notes = ''
 
     # store all needed info in a list of dicts
     source_list = []
@@ -128,11 +129,9 @@ if __name__ == "__main__":
                 this_source['site_lon_deg'] = siteLon
                 this_source['site_el_m'] = siteEl
                 this_source['src_id'] =  src_name
-                this_source['src_is_pulsar_bool'] = src_is_pulsar
                 this_source['corr_integ_time_sec'] = cor_integ_time
                 this_source['src_ra_j2000_deg'] = src_ra
                 this_source['src_dec_j2000_deg'] = src_dec
-                this_source['src_radius'] = radius
                 this_source['src_start_utc'] = startTime.strftime("%Y-%m-%dT%H:%M:%S.%f")
                 this_source['src_end_utc'] = lastTime.strftime("%Y-%m-%dT%H:%M:%S.%f")
                 this_source['slew_sec'] = slewTime
@@ -140,13 +139,14 @@ if __name__ == "__main__":
                 this_source['trk_rate_ra_deg_per_sec'] = trk_rate_ra
                 this_source['freq_lower_hz'] = freq_lower
                 this_source['freq_upper_hz'] = freq_upper
-                this_source['notes'] = notes
+                this_source['version'] = version
+                this_source['dish_diameter_m'] = dish_diameter
+                this_source['subarray'] = subarray
                 source_list.append(this_source)
 
                 # reset fields for this source dict
                 this_source = {}
                 src_name = None
-                src_is_pulsar = False
                 cor_integ_time = 1
                 src_ra = None
                 src_dec = None
@@ -159,7 +159,6 @@ if __name__ == "__main__":
                 trk_rate_ra = 0
                 freq_lower = 2000000000
                 freq_upper = 14000000000
-                notes = ''
 
                 # get source name, ra, dec
                 src_name = line[7:].split(',')[0]
@@ -228,11 +227,9 @@ if __name__ == "__main__":
             this_source['site_lon_deg'] = siteLon
             this_source['site_el_m'] = siteEl
             this_source['src_id'] =  src_name
-            this_source['src_is_pulsar_bool'] = src_is_pulsar
             this_source['corr_integ_time_sec'] = cor_integ_time
             this_source['src_ra_j2000_deg'] = src_ra
             this_source['src_dec_j2000_deg'] = src_dec
-            this_source['src_radius'] = radius
             this_source['src_start_utc'] = startTime.strftime("%Y-%m-%dT%H:%M:%S.%f")
             this_source['src_end_utc'] = lastTime.strftime("%Y-%m-%dT%H:%M:%S.%f")
             this_source['slew_sec'] = slewTime
@@ -240,7 +237,9 @@ if __name__ == "__main__":
             this_source['trk_rate_ra_deg_per_sec'] = trk_rate_ra
             this_source['freq_lower_hz'] = freq_lower
             this_source['freq_upper_hz'] = freq_upper
-            this_source['notes'] = notes
+            this_source['version'] = version
+            this_source['dish_diameter_m'] = dish_diameter
+            this_source['subarray'] = subarray
             source_list.append(this_source)
 
     # dump data into json file to set default values
@@ -249,7 +248,7 @@ if __name__ == "__main__":
     
     # ods_in.json -> odsuser.py -> ods_out.json
     outfile = os.path.basename(args['filename']).split('.')[0] + "_ods.json"
-    cmd = "$(which python) {} -o ods_in.json -d from_ods -w {}".format(os.path.join(ODS_PTH, "odsuser.py"), outfile)
+    cmd = "$(which python) {} -d ods_in.json -f ods_in.json -w {}".format(os.path.join(ODS_PTH, "odsuser.py"), outfile)
     ret = os.system(cmd)
     if (ret != 0):
         raise Exception("Problem creating ODS file")
