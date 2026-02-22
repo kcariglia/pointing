@@ -28,7 +28,6 @@ import argparse
 import datetime
 import json
 import os, os.path
-import time
 
 import astropy.coordinates
 import astropy.time
