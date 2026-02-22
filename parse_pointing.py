@@ -28,13 +28,14 @@ import argparse
 import datetime
 import json
 import os, os.path
+import time
 
 import astropy.coordinates
 import astropy.time
 import astropy.units
 
 # hardcoded path to github checkout of odsutils/scripts
-ODS_PTH = "/Users/cariglia/odsutils/scripts"
+ODS_PTH = "/Users/cariglia/kc_ods/odsutils/scripts"#"/Users/cariglia/odsutils/scripts"
 
 
 if __name__ == "__main__":
@@ -242,6 +243,37 @@ if __name__ == "__main__":
             this_source['subarray'] = subarray
             source_list.append(this_source)
 
+    # remember the last time read from the input schedule
+    lastReadTime = datetime.datetime.strptime(source_list[-1]['src_end_utc'], "%Y-%m-%dT%H:%M:%S.%f")
+    lastReadTime = lastReadTime.replace(tzinfo=datetime.timezone.utc)
+
+    # default access mode
+    accessMode = "a"
+
+    # check if ods_in.json already exists
+    if os.access("ods_in.json", os.R_OK):
+
+        # check last source of previous schedule
+        with open("ods_in.json", "r") as j:
+            data = json.load(j)
+            lastSource = data["ods_data"][-1]
+            lastSourceTime = datetime.datetime.strptime(lastSource['src_end_utc'], "%Y-%m-%dT%H:%M:%S.%f")
+            lastSourceTime = lastSourceTime.replace(tzinfo=datetime.timezone.utc)
+            now = datetime.datetime.now(tz=datetime.timezone.utc)
+            delta = datetime.timedelta(hours=24)
+
+            if lastReadTime < lastSourceTime:
+                # the last time we read is older than the last time of the previous scheudle, ABORT
+                raise ValueError(f"WARNING: New snp file {fname} is older than last valid JSON record")
+
+            if now - lastSourceTime > delta:
+               # last source older than 24 hours, overwrite
+               accessMode = "w"
+
+            # check access mode is still append-- if so, aggregate sources
+            if accessMode == "a":
+                source_list = data["ods_data"] + source_list
+
     # dump data into json file to set default values
     with open("ods_in.json", "w") as f:
         json.dump({"ods_data":source_list}, f)
@@ -259,9 +291,10 @@ if __name__ == "__main__":
     if (ret != 0):
         raise Exception("Problem reading ODS file")
 
+    # AS OF 2/22/26: keep ods_in.json
     # no problems, so get rid of ods_in.json
-    if os.access("ods_in.json", os.R_OK) and os.access(outfile, os.R_OK):
-        os.remove("ods_in.json")
+    # if os.access("ods_in.json", os.R_OK) and os.access(outfile, os.R_OK):
+    #     os.remove("ods_in.json")
 
 
         
