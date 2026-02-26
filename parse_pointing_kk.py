@@ -34,7 +34,7 @@ import astropy.time
 import astropy.units
 
 # hardcoded path to github checkout of odsutils/scripts
-ODS_PTH = "/home/k2-ops/odsutils/scripts"
+ODS_PTH = "/home/kk-ops/odsutils/scripts"
 
 
 if __name__ == "__main__":
