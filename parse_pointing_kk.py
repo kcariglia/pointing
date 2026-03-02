@@ -242,7 +242,9 @@ if __name__ == "__main__":
             this_source['subarray'] = subarray
             source_list.append(this_source)
 
-    # remember the last time read from the input schedule
+    # remember the first and last times read from the input schedule
+    firstReadTime = datetime.datetime.strptime(source_list[0]['src_start_utc'], "%Y-%m-%dT%H:%M:%S.%f")
+    firstReadTime = firstReadTime.replace(tzinfo=datetime.timezone.utc)
     lastReadTime = datetime.datetime.strptime(source_list[-1]['src_end_utc'], "%Y-%m-%dT%H:%M:%S.%f")
     lastReadTime = lastReadTime.replace(tzinfo=datetime.timezone.utc)
 
@@ -252,26 +254,55 @@ if __name__ == "__main__":
     # check if ods_in.json already exists
     if os.access("ods_in.json", os.R_OK):
 
-        # check last source of previous schedule
+        # check first and last source of previous schedule
         with open("ods_in.json", "r") as j:
             data = json.load(j)
+
+            firstSource = data["ods_data"][0]
+            firstSourceStartTime = datetime.datetime.strptime(firstSource['src_start_utc'], "%Y-%m-%dT%H:%M:%S.%f")
+            firstSourceStartTime = firstSourceStartTime.replace(tzinfo=datetime.timezone.utc)
+
             lastSource = data["ods_data"][-1]
-            lastSourceTime = datetime.datetime.strptime(lastSource['src_end_utc'], "%Y-%m-%dT%H:%M:%S.%f")
-            lastSourceTime = lastSourceTime.replace(tzinfo=datetime.timezone.utc)
+            lastSourceEndTime = datetime.datetime.strptime(lastSource['src_end_utc'], "%Y-%m-%dT%H:%M:%S.%f")
+            lastSourceEndTime = lastSourceEndTime.replace(tzinfo=datetime.timezone.utc)
+
             now = datetime.datetime.now(tz=datetime.timezone.utc)
             delta = datetime.timedelta(hours=24)
 
-            if lastReadTime < lastSourceTime:
-                # the last time we read is older than the last time of the previous scheudle, ABORT
-                raise ValueError(f"WARNING: New snp file {fname} is older than last valid JSON record")
+            # assuming schedule_1 is the previous schedule of scans read from ods_in.json
+            # and scheudle_2 is the new schedule we just read
+            # check: is schedule_2.scan[0].startTime after schedule_1.scan[-1].endTime?
+            if lastSourceEndTime < firstReadTime:
+                # yes -- is the difference more than 24 hours?
+                if firstReadTime - lastSourceEndTime > delta:
+                    # yes-- switch to write mode to overwrite old ods_in.json
+                    accessMode = "w"
+                else:
+                    # no-- stay in append mode
+                    source_list = data["ods_data"] + source_list
+            else:
+                # no-- schedule_2 starts before the end of schedule_1
+                # check if schedule_2 is contained within schedule_1
+                if (firstSourceStartTime < firstReadTime) and (lastReadTime < lastSourceEndTime):
+                    # yes-- find unusually long scan from schedule_1 and replace with schedule_2
+                    scanDelta = datetime.timedelta(hours=1)
+                    toDelete = -999999 # ridiculous delete index just in case
 
-            if now - lastSourceTime > delta:
-               # last source older than 24 hours, overwrite
-               accessMode = "w"
+                    for idx, thisSource in enumerate(data["ods_data"]):
+                        thisSourceStart = datetime.datetime.strptime(thisSource['src_start_utc'], "%Y-%m-%dT%H:%M:%S.%f")
+                        thisSourceStart = thisSourceStart.replace(tzinfo=datetime.timezone.utc)
+                        thisSourceEnd = datetime.datetime.strptime(thisSource['src_end_utc'], "%Y-%m-%dT%H:%M:%S.%f")
+                        thisSourceEnd = thisSourceEnd.replace(tzinfo=datetime.timezone.utc)
 
-            # check access mode is still append-- if so, aggregate sources
-            if accessMode == "a":
-                source_list = data["ods_data"] + source_list
+                        if thisSourceEnd - thisSourceStart > scanDelta:
+                            # found unusally long scan, remember it
+                            toDelete = idx
+                            break
+
+                    source_list = data["ods_data"][:toDelete] + source_list + data["ods_data"][toDelete+1:]
+                else:
+                    # schedule_2 not contained by schedule_1 but starts before schedule_1 ends, ABORT
+                    raise ValueError(f"WARNING: New snp file {fname} is older than last valid JSON record")
 
     # dump data into json file to set default values
     with open("ods_in.json", "w") as f:
