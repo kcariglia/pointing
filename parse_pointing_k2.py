@@ -116,7 +116,7 @@ if __name__ == "__main__":
                     dif_el = azel2.alt.value - azel1.alt.value
                     az_time = abs(dif_az.wrap_at(180 * astropy.units.deg)).value / slew_az
                     el_time = abs(dif_el) / slew_el
-                    slewTime = az_time + el_time
+                    slewTime = max(az_time, el_time)
 
                 # times should be contiguous
                 if len(source_list) == 0:
@@ -218,7 +218,7 @@ if __name__ == "__main__":
                     dif_el = azel2.alt.value - azel1.alt.value
                     az_time = abs(dif_az.wrap_at(180 * astropy.units.deg)).value / slew_az
                     el_time = abs(dif_el) / slew_el
-                    slewTime = az_time + el_time
+                    slewTime = max(az_time, el_time)
 
             startTime = datetime.datetime.strptime(source_list[-1]['src_end_utc'], "%Y-%m-%dT%H:%M:%S.%f")
 

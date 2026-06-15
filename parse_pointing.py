@@ -114,7 +114,7 @@ if __name__ == "__main__":
                     dif_el = azel2.alt.value - azel1.alt.value
                     az_time = abs(dif_az.wrap_at(180 * astropy.units.deg)).value / slew_az
                     el_time = abs(dif_el) / slew_el
-                    slewTime = az_time + el_time
+                    slewTime = max(az_time, el_time)
 
                 # times should be contiguous
                 if len(source_list) == 0:
@@ -141,6 +141,8 @@ if __name__ == "__main__":
                 this_source['version'] = version
                 this_source['dish_diameter_m'] = dish_diameter
                 this_source['subarray'] = subarray
+                if slewTime > (lastTime-startTime).seconds+4:
+                    raise ValueError("problem with this source")
                 source_list.append(this_source)
 
                 # reset fields for this source dict
@@ -216,7 +218,7 @@ if __name__ == "__main__":
                     dif_el = azel2.alt.value - azel1.alt.value
                     az_time = abs(dif_az.wrap_at(180 * astropy.units.deg)).value / slew_az
                     el_time = abs(dif_el) / slew_el
-                    slewTime = az_time + el_time
+                    slewTime = max(az_time, el_time)
 
             startTime = datetime.datetime.strptime(source_list[-1]['src_end_utc'], "%Y-%m-%dT%H:%M:%S.%f")
 
@@ -265,8 +267,8 @@ if __name__ == "__main__":
                 raise ValueError(f"WARNING: New snp file {fname} is older than last valid JSON record")
 
             if now - lastSourceTime > delta:
-               # last source older than 24 hours, overwrite
-               accessMode = "w"
+                # last source older than 24 hours, overwrite
+                accessMode = "w"
 
             # check access mode is still append-- if so, aggregate sources
             if accessMode == "a":
